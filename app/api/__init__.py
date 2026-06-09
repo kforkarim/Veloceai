@@ -6,21 +6,29 @@ from typing import List
 router = APIRouter()
 evaluator = WorkflowEvaluator()
 
-class EvaluationRequest(BaseModel):
+class AdvancedEvaluationRequest(BaseModel):
     content_sample: str
     target_models: List[str]
-    runpod_endpoint_id: str = None
+    task_type: str = "Standard_Processing"
+    enable_cache: bool = True
+    strict_privacy: bool = False
 
 @router.post("/evaluate")
-async def evaluate_content(payload: EvaluationRequest, background_tasks: BackgroundTasks):
-    # Runs the calculation matrix safely in background thread to preserve server event loops
+async def evaluate_content(payload: AdvancedEvaluationRequest, background_tasks: BackgroundTasks):
     background_tasks.add_task(
         evaluator.process_matrix, 
         payload.content_sample, 
-        payload.target_models
+        payload.target_models,
+        payload.task_type,
+        payload.enable_cache,
+        payload.strict_privacy
     )
     return {
         "status": "processing",
-        "message": "VeloceAI matrix processing tracking initiated in background.",
-        "models_evaluated": payload.target_models
+        "message": "Advanced VeloceAI matrix processing initiated with optimization profiling.",
+        "configurations_tracked": {
+            "cache_optimization": payload.enable_cache,
+            "strict_privacy_gate": payload.strict_privacy,
+            "target_profile": payload.task_type
+        }
     }
