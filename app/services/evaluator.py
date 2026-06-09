@@ -10,13 +10,11 @@ class WorkflowEvaluator:
         litellm.api_key = LITELLM_MASTER_KEY
 
     def generate_optimization_strategy(self, task_type: str, cache_enabled: bool, privacy_strict: bool) -> dict:
-        """Generates clear, prescriptive business context on why specific infrastructure configurations matter."""
         strategy = {
             "applied_env_overrides": [],
             "tactical_justification": ""
         }
         
-        # Scenario 1: Cache Optimization Layer
         if cache_enabled:
             strategy["applied_env_overrides"].append(DEFAULT_VLLM_CONFIGS["prefix_caching"])
             strategy["tactical_justification"] += (
@@ -24,7 +22,6 @@ class WorkflowEvaluator:
                 "bypassing the prefill phase to collapse TTFT latency up to 85% and slice input costs. "
             )
         
-        # Scenario 2: Processing Heavy or Document-Rich Workloads
         if task_type in ["PDF_Data_Extraction", "Heavy_Batch"]:
             strategy["applied_env_overrides"].append(DEFAULT_VLLM_CONFIGS["fp8_kv_cache"])
             strategy["applied_env_overrides"].append(DEFAULT_VLLM_CONFIGS["memory_utilization"])
@@ -34,7 +31,6 @@ class WorkflowEvaluator:
                 "while boosting pipeline throughput by roughly 40%. "
             )
             
-        # Scenario 3: Compliance & Privacy Guarding
         if privacy_strict:
             strategy["tactical_justification"] += (
                 "Strict Zero-Leak Mode Active. External cloud endpoint proxies have been completely decoupled. "
@@ -46,7 +42,6 @@ class WorkflowEvaluator:
         return strategy
 
     async def process_matrix(self, sample_content: str, model_list: list, task_type: str, cache_enabled: bool, privacy_strict: bool) -> dict:
-        """Evaluates model performance and strings together the comprehensive behavioral 'Why' analysis."""
         optimization_insights = self.generate_optimization_strategy(task_type, cache_enabled, privacy_strict)
         
         results = {
@@ -55,7 +50,6 @@ class WorkflowEvaluator:
         }
         
         for model in model_list:
-            # If privacy is strict, automatically catch and flag commercial cloud APIs
             if privacy_strict and any(x in model for x in ["gpt-", "claude-", "gemini-"]):
                 results["model_evaluations"][model] = {
                     "status": "filtered",
